@@ -5,6 +5,7 @@ local player = Players.LocalPlayer
 
 local titleLabel = player.PlayerGui.Interface.Customisation.Family.Family.Title
 local clickX, clickY = 1000, 560
+local yesButtonX, yesButtonY = 582, 340
 local autoRollEnabled = false
 local filterTier = ""
 
@@ -129,6 +130,9 @@ task.spawn(function()
             else
                 VirtualInputManager:SendMouseButtonEvent(clickX, clickY, 0, true, game, 0)
                 VirtualInputManager:SendMouseButtonEvent(clickX, clickY, 0, false, game, 0)
+                task.wait(1)
+                VirtualInputManager:SendMouseButtonEvent(yesButtonX, yesButtonY, 0, true, game, 0)
+                VirtualInputManager:SendMouseButtonEvent(yesButtonX, yesButtonY, 0, false, game, 0)
             end
         end
         wait(4)
