@@ -41,41 +41,80 @@ local function setupGenerator(generator)
     generator:GetAttributeChangedSignal("RepairProgress"):Connect(updateProgress)
     updateProgress()
 end
+local function setupExitLever(lever)
+    if not lever or not lever:IsA("Model") then return end
+    if lever:GetAttribute("ExitLeverGuiSetup") then return end
+    lever:SetAttribute("ExitLeverGuiSetup", true)
+    local billboard = lever:FindFirstChild("ExitLeverGui")
+    if not billboard then
+        billboard = Instance.new("BillboardGui")
+        billboard.Name = "ExitLeverGui"
+        billboard.Adornee = lever.PrimaryPart or lever:FindFirstChildWhichIsA("BasePart")
+        billboard.Size = UDim2.new(0, 100, 0, 30)
+        billboard.StudsOffset = Vector3.new(0, 4, 0)
+        billboard.AlwaysOnTop = true
+        billboard.Parent = lever
+    end
+    local textLabel = billboard:FindFirstChild("LeverLabel")
+    if not textLabel then
+        textLabel = Instance.new("TextLabel")
+        textLabel.Name = "LeverLabel"
+        textLabel.Size = UDim2.new(1, 0, 1, 0)
+        textLabel.BackgroundTransparency = 1
+        textLabel.TextScaled = false
+        textLabel.Font = Enum.Font.SourceSansBold
+        textLabel.TextStrokeTransparency = 0.7
+        textLabel.TextSize = 16
+        textLabel.Text = "Lever"
+        textLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+        textLabel.Parent = billboard
+    end
+end
+local function scanGateForLever(gate)
+    if not gate or not gate:IsA("Model") then return end
+    for _, child in ipairs(gate:GetChildren()) do
+        if child:IsA("Model") and child.Name == "ExitLever" then
+            setupExitLever(child)
+        end
+    end
+    gate.ChildAdded:Connect(function(child)
+        if child:IsA("Model") and child.Name == "ExitLever" then
+            setupExitLever(child)
+        end
+    end)
+end
 local function scanContainer(container)
     if scannedContainers[container] then return end
     scannedContainers[container] = true
     for _, child in ipairs(container:GetChildren()) do
         if child:IsA("Model") and child.Name == "Generator" then
             setupGenerator(child)
+        elseif child:IsA("Model") and child.Name == "Gate" then
+            scanGateForLever(child)
         end
     end
     container.ChildAdded:Connect(function(child)
         if child:IsA("Model") and child.Name == "Generator" then
             setupGenerator(child)
+        elseif child:IsA("Model") and child.Name == "Gate" then
+            scanGateForLever(child)
         end
     end)
 end
-local directGeneratorFound = false
+scanContainer(map)
 for _, child in ipairs(map:GetChildren()) do
-    if child:IsA("Model") and child.Name == "Generator" then
-        directGeneratorFound = true
-        break
-    end
-end
-if directGeneratorFound then
-    scanContainer(map)
-else
-    for _, child in ipairs(map:GetChildren()) do
-        if child:IsA("Folder") then
-            scanContainer(child)
-        end
+    if child:IsA("Folder") then
+        scanContainer(child)
     end
 end
 map.ChildAdded:Connect(function(child)
     if child:IsA("Folder") then
         scanContainer(child)
-    elseif child:IsA("Model") and child.Name == "Generator" then
-        scanContainer(map)
-        setupGenerator(child)
+    elseif child:IsA("Model") then
+        if child.Name == "Generator" then
+            setupGenerator(child)
+        elseif child.Name == "Gate" then
+            scanGateForLever(child)
+        end
     end
 end)
